@@ -1,4 +1,4 @@
-from runtypess import typechecker
+from runtypes import typechecker
 
 
 def test_creation():

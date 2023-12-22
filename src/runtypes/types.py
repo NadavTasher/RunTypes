@@ -1,6 +1,6 @@
 import os
 
-from runtypess.typechecker import typechecker
+from runtypes.typechecker import typechecker
 
 
 @typechecker

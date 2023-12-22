@@ -1,7 +1,7 @@
 import pytest
 
-from runtypess.types import Literal, Intersection
-from runtypess.kwargchecker import kwargchecker
+from runtypes.types import Literal, Intersection
+from runtypes.kwargchecker import kwargchecker
 
 
 def test_kwargchecker():

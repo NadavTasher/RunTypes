@@ -2,8 +2,18 @@
 name = "runtypes"
 version = "0.1.0"
 description = "A simple library for runtime validation of types."
+readme = "README.md"
 license = {file = "LICENSE"}
 maintainers = [{name = "Nadav Tasher", email = "hey@nadav.app"}]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+keywords = ["runtime", "typing", "typecheck"]
+
+[project.urls]
+Homepage = "https://github.com/NadavTasher/Runtypes"
 
 [build-system]
 requires = ["setuptools>=61.0"]

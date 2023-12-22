@@ -1,4 +1,4 @@
-from runtype import typechecker
+from runtypess import typechecker
 
 
 def test_creation():
@@ -47,7 +47,7 @@ def test_arguments():
     assert isinstance("Hello World", StringThatMustContain["World"]), "Must-contain check failed"
 
     # Make sure no false positives
-    assert not isinstance("Hello World", StringThatMustContain["Runtype"]), "Must-contain check failed"
+    assert not isinstance("Hello World", StringThatMustContain["runtypes"]), "Must-contain check failed"
 
 
 def test_representation():

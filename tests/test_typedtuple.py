@@ -1,7 +1,7 @@
 import pytest
 
-from runtype.types import *
-from runtype.typedtuple import typedtuple
+from runtypess.types import *
+from runtypess.typedtuple import typedtuple
 
 
 def test_creation():

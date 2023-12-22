@@ -1,5 +1,5 @@
 [project]
-name = "runtype"
+name = "runtypes"
 version = "0.1.0"
 description = "A simple library for runtime validation of types."
 license = {file = "LICENSE"}

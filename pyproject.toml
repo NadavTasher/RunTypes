@@ -1,6 +1,6 @@
 [project]
 name = "runtypes"
-version = "0.1.1"
+version = "0.2.0"
 description = "A simple library for runtime validation of types."
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -13,7 +13,7 @@ classifiers = [
 keywords = ["runtime", "typing", "typecheck"]
 
 [project.urls]
-Homepage = "https://github.com/NadavTasher/Runtypes"
+Homepage = "https://github.com/NadavTasher/RunTypes"
 
 [build-system]
 requires = ["setuptools>=61.0"]

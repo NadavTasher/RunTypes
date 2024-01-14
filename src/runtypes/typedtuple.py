@@ -2,7 +2,7 @@ import functools
 import collections
 
 
-def typedtuple(name, fields):
+def TypedTuple(name, fields):
     # Create namedtuple classtype
     namedtuple = collections.namedtuple(name, [key for key, _ in fields])
 
@@ -26,3 +26,7 @@ def typedtuple(name, fields):
 
     # Return the namedtuple class
     return namedtuple
+
+
+# Create lower-case name for ease-of-use
+typedtuple = TypedTuple

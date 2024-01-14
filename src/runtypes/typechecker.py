@@ -10,8 +10,8 @@ class TypeChecker(object):
             raise TypeError("Arguments must be a list")
 
         # Set the internal target function
-        self._target_function = function
-        self._target_arguments = arguments or list()
+        self._function = function
+        self._arguments = arguments or list()
 
     def __instancecheck__(self, value):
         try:
@@ -32,19 +32,19 @@ class TypeChecker(object):
             arguments = [argument]
 
         # Return a partial validator
-        return TypeChecker(self._target_function, self._target_arguments + arguments)
+        return TypeChecker(self._function, self._arguments + arguments)
 
     def __call__(self, value):
         # Call the target function with all required arguments
-        return self._target_function(value, *self._target_arguments)
+        return self._function(value, *self._arguments)
 
     def __repr__(self):
         # Create initial representation
-        representation = self._target_function.__name__
+        representation = self._function.__name__
 
         # If there are any arguments, add them to the representation
-        if self._target_arguments:
-            representation += repr(self._target_arguments)
+        if self._arguments:
+            representation += repr(self._arguments)
 
         # Return the generated representation
         return representation

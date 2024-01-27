@@ -78,7 +78,12 @@ def List(value, item_type=Any):
         raise TypeError("Value is not a list")
 
     # Loop over value and check items
-    return list(item_type(item) for item in value)
+    for item in value:
+        if not isinstance(item, item_type):
+            raise TypeError("Item %r is not an instance of %r" % (item, item_type))
+
+    # Convert the list
+    return list([item_type(item) for item in value])
 
 
 @typechecker
@@ -86,6 +91,16 @@ def Dict(value, key_type=Any, value_type=Any):
     # Make sure value is a dictionary
     if not isinstance(value, dict):
         raise TypeError("Value is not a dict")
+
+    # Loop over value and check items
+    for _key, _value in value.items():
+        # Check the key type
+        if not isinstance(_key, key_type):
+            raise TypeError("Key %r is not an instance of %r" % (_key, key_type))
+
+        # Check the value type
+        if not isinstance(_value, value_type):
+            raise TypeError("Value %r is not an instance of %r" % (_value, value_type))
 
     # Loop over keys and values and check types
     return dict({key_type(key): value_type(value) for key, value in value.items()})
@@ -104,6 +119,12 @@ def Tuple(value, *item_types):
     # Make sure value is of length
     if len(value) != len(item_types):
         raise TypeError("Value length is invalid")
+
+    # Check all item types
+    for item, item_type in zip(value, item_types):
+        # Check the item type
+        if not isinstance(item, item_type):
+            raise TypeError("Item %r is not an instance of %r" % (item, item_types))
 
     # Loop over values in tuple and validate them
     return tuple(item_type(item) for item, item_type in zip(value, item_types))

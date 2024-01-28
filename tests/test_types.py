@@ -16,12 +16,6 @@ def test_union():
     assert not isinstance(42.0, Union[Text, Integer])
 
 
-def test_intersection():
-    assert Intersection[Text, Email]("hello@local.host") == "hello@local.host"
-    assert isinstance("hello@localhost", Intersection[Text, Email])
-    assert not isinstance("hello", Intersection[Text, Email])
-
-
 def test_literal():
     assert Literal[1, 2](1) == 1
     assert isinstance("Hello World", Literal["Hello World", 42])
@@ -54,6 +48,7 @@ def test_list():
     assert List[Union[Text, Integer]](["1", 2]) == ["1", 2]
     assert isinstance(["Hello", "World", 42], List)
     assert not isinstance(["Hello", "World", 42], List[Text])
+    assert not isinstance(["Hello", 10], List[int])
 
 
 def test_dict():

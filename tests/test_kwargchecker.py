@@ -1,12 +1,12 @@
 import pytest
 
-from runtypes.types import Literal, Intersection
+from runtypes.types import Literal
 from runtypes.kwargchecker import kwargchecker
 
 
 def test_kwargchecker():
 
-    @kwargchecker(integer=Intersection[Literal[10], int])
+    @kwargchecker(integer=Literal[10])
     def target(integer):
         print("Got %d" % integer)
 

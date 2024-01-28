@@ -2,6 +2,11 @@ import os
 
 from runtypes.typechecker import typechecker
 
+def assert_isinstance(_value, _type):
+    # Check the value and type accordingly
+    if not isinstance(_value, _type):
+        raise TypeError("Value is not an instance of %r" % _type)
+
 
 @typechecker
 def Any(value):
@@ -9,24 +14,28 @@ def Any(value):
 
 
 @typechecker
+def Optional(value, optional_type=Any):
+    # Return if value is none
+    if value is None:
+        return
+
+    # Check the optional type
+    if not isinstance(value, optional_type):
+        raise TypeError("Value is not an instance of %r" % optional_type)
+
+    # Validate further
+    return optional_type(value)
+
+
+@typechecker
 def Union(value, *value_types):
     # Validate value with types
     for value_type in value_types:
         if isinstance(value, value_type):
-            return value
+            return value_type(value)
 
     # Raise a value error
-    raise TypeError("Value is not one of the following types - %r" % value_types)
-
-
-@typechecker
-def Intersection(value, *value_types):
-    # Validate value with types
-    for value_type in value_types:
-        value = value_type(value)
-
-    # Validation has passed
-    return value
+    raise TypeError("Value is not an instance of one of the following types: %r" % value_types)
 
 
 @typechecker
@@ -40,22 +49,11 @@ def Literal(value, *literal_values):
 
 
 @typechecker
-def Optional(value, optional_type=Any):
-    # Return if value is none
-    if value is None:
-        return value
-
-    # Validate further
-    return optional_type(value)
-
-
-@typechecker
 def Text(value):
     # Make sure the value is an instance of a string
     # In Python 2, u"".__class__ returns unicode
     # In Python 3, u"".__class__ returns str
-    if not isinstance(value, (str, u"".__class__)):
-        raise TypeError("Value is not text")
+    assert_isinstance(value, (str, u"".__class__))
 
     # Return the value
     return value
@@ -64,8 +62,7 @@ def Text(value):
 @typechecker
 def Bytes(value):
     # Make sure the value is an instance of bytes
-    if not isinstance(value, bytes):
-        raise TypeError("Value is not bytes")
+    assert_isinstance(value, bytes)
 
     # Return the value
     return value
@@ -74,13 +71,11 @@ def Bytes(value):
 @typechecker
 def List(value, item_type=Any):
     # Make sure value is a list
-    if not isinstance(value, list):
-        raise TypeError("Value is not a list")
+    assert_isinstance(value, list)
 
     # Loop over value and check items
     for item in value:
-        if not isinstance(item, item_type):
-            raise TypeError("Item %r is not an instance of %r" % (item, item_type))
+        assert_isinstance(item, item_type)
 
     # Convert the list
     return list([item_type(item) for item in value])
@@ -89,18 +84,13 @@ def List(value, item_type=Any):
 @typechecker
 def Dict(value, key_type=Any, value_type=Any):
     # Make sure value is a dictionary
-    if not isinstance(value, dict):
-        raise TypeError("Value is not a dict")
+    assert_isinstance(value, dict)
 
     # Loop over value and check items
     for _key, _value in value.items():
-        # Check the key type
-        if not isinstance(_key, key_type):
-            raise TypeError("Key %r is not an instance of %r" % (_key, key_type))
-
-        # Check the value type
-        if not isinstance(_value, value_type):
-            raise TypeError("Value %r is not an instance of %r" % (_value, value_type))
+        # Check the key and value types
+        assert_isinstance(_key, key_type)
+        assert_isinstance(_value, value_type)
 
     # Loop over keys and values and check types
     return dict({key_type(key): value_type(value) for key, value in value.items()})
@@ -172,7 +162,7 @@ def Schema(value, schema):
 
     # Make sure all of the keys exist
     if set(value.keys()) - set(schema.keys()):
-        raise TypeError("Value and schema keys are not equal")
+        raise TypeError("Value keys and schema keys are not equal")
 
     # Make sure all items are valid
     return {key: (value_type if not isinstance(value_type, dict) else Schema[value_type])(value.get(key)) for key, value_type in schema.items()}
@@ -181,7 +171,8 @@ def Schema(value, schema):
 @typechecker
 def Charset(value, chars):
     # Make sure value is a string
-    value = Text(value)
+    if not isinstance(value, Text):
+        raise TypeError("Value is not an instance of %r" % Text)
 
     # Validate charset
     if any(char not in chars for char in value):
@@ -194,18 +185,20 @@ def Charset(value, chars):
 @typechecker
 def Domain(value):
     # Make sure value is a string
-    value = Text(value)
+    if not isinstance(value, Text):
+        raise TypeError("Value is not an instance of %r" % Text)
 
     # Split to parts by dot
     parts = value.split(".")
 
     # Make sure all parts are not empty
     if not all(parts):
-        raise TypeError("Value parts are invalid")
+        raise TypeError("Domain parts are invalid")
 
     # Loop over parts and validate characters
     for part in parts:
-        part = Charset["abcdefghijklmnopqrstuvwxyz0123456789-"](part.lower())
+        if not isinstance(part.lower(), Charset["abcdefghijklmnopqrstuvwxyz0123456789-"]):
+            raise TypeError("Domain part contains invalid characters")
 
     # Validation has passed
     return value
@@ -214,33 +207,36 @@ def Domain(value):
 @typechecker
 def Email(value):
     # Make sure value is a string
-    value = Text(value)
+    if not isinstance(value, Text):
+        raise TypeError("Value is not an instance of %r" % Text)
 
     # Split into two (exactly)
     parts = value.split("@")
 
     # Make sure the length is 2
     if len(parts) != 2:
-        raise TypeError("Value can't be split correctly")
+        raise TypeError("Email can't be split into address and domain")
 
     # Make sure all parts are not empty
     if not all(parts):
-        raise TypeError("Value parts are invalid")
+        raise TypeError("Email parts are empty")
 
     # Extract address and domain
     address, domain = parts
 
     # Make sure the domain is an FQDN
-    domain = Domain(domain)
+    if not isinstance(domain, Domain):
+        raise TypeError("Email domain is not an instance of %r" % Domain)
 
     # Make sure the address is valid
     for part in address.split("."):
         # Make sure part is not empty
         if not part:
-            raise TypeError("Value address part is invalid")
+            raise TypeError("Email address part is empty")
 
         # Make sure part matches charset
-        part = Charset["abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!#$%&'*+-/=?^_`{|}~"](part)
+        if not isinstance(part, Charset["abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!#$%&'*+-/=?^_`{|}~"]):
+            raise TypeError("Email address part contains invalid characters")
 
     # Validation has passed
     return value
@@ -248,38 +244,41 @@ def Email(value):
 
 @typechecker
 def Path(value):
-    # Make sure the value is text or bytes
-    value = Union[Text, Bytes](value)
+    # Make sure value is a string
+    if not isinstance(value, Text):
+        raise TypeError("Value is not an instance of %r" % Text)
 
     # Convert the path into a normal path
     value = os.path.normpath(value)
 
     # Split the path by separator
     for part in value.split(os.path.sep):
-        # Make sure the part matches the charset
-        path = PathName(part)
+        # Make sure the part is a valid path name
+        if not isinstance(part, PathName):
+            raise TypeError("Value part is not an instance of %r" % Text)
 
     # Path is valid
-    return path
+    return value
 
 
 @typechecker
 def PathName(value):
-    # Make sure the value is text or bytes
-    value = Union[Text, Bytes](value)
+    # Make sure value is a string
+    if not isinstance(value, Text):
+        raise TypeError("Value is not an instance of %r" % Text)
 
     # Convert the path into a normal path
     value = os.path.normpath(value)
 
     # Make sure there are not path separators in the value
     if os.path.sep in value:
-        raise TypeError("Value must not contain path separator")
+        raise TypeError("Path name contains path separator")
 
     # Make sure the path does not contain invalid characters
     for char in value:
         # Check for forbidden characters
         if char in ':"*?<>|':
-            raise TypeError("Value must not contain invalid characters")
+            raise TypeError("Path name contains invalid characters")
 
     # Pathname is valid
     return value

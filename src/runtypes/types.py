@@ -2,10 +2,21 @@ import os
 
 from runtypes.typechecker import typechecker
 
-def assert_isinstance(_value, _type):
-    # Check the value and type accordingly
-    if not isinstance(_value, _type):
-        raise TypeError("Value is not an instance of %r" % _type)
+
+def _assert(_condition, _error):
+    # Check the value and raise accordingly
+    if not _condition:
+        raise TypeError(_error)
+
+
+def _assert_istype(_value, _type):
+    # Check the instance
+    _assert(type(_value) == _type, "Value is not of type {0}".format(_type.__name__))
+
+
+def _assert_isinstance(_value, _type):
+    # Check the instance
+    _assert(isinstance(_value, _type), "Value is not an instance of {0}".format(_type))
 
 
 @typechecker
@@ -20,11 +31,10 @@ def Optional(value, optional_type=Any):
         return
 
     # Check the optional type
-    if not isinstance(value, optional_type):
-        raise TypeError("Value is not an instance of %r" % optional_type)
+    _assert_isinstance(value, optional_type)
 
     # Validate further
-    return optional_type(value)
+    return value
 
 
 @typechecker
@@ -32,17 +42,16 @@ def Union(value, *value_types):
     # Validate value with types
     for value_type in value_types:
         if isinstance(value, value_type):
-            return value_type(value)
+            return value
 
     # Raise a value error
-    raise TypeError("Value is not an instance of one of the following types: %r" % value_types)
+    raise TypeError("Value is not an instance of one of the following types: {0}".format(value_types))
 
 
 @typechecker
 def Literal(value, *literal_values):
     # Make sure value exists
-    if value not in literal_values:
-        raise TypeError("Value is not one of %r" % literal_values)
+    _assert(value in literal_values, "Value is not one of {0}".format(literal_values))
 
     # Return the value
     return value
@@ -53,7 +62,7 @@ def Text(value):
     # Make sure the value is an instance of a string
     # In Python 2, u"".__class__ returns unicode
     # In Python 3, u"".__class__ returns str
-    assert_isinstance(value, (str, u"".__class__))
+    _assert_isinstance(value, (str, u"".__class__))
 
     # Return the value
     return value
@@ -62,7 +71,7 @@ def Text(value):
 @typechecker
 def Bytes(value):
     # Make sure the value is an instance of bytes
-    assert_isinstance(value, bytes)
+    _assert_isinstance(value, bytes)
 
     # Return the value
     return value
@@ -71,60 +80,56 @@ def Bytes(value):
 @typechecker
 def List(value, item_type=Any):
     # Make sure value is a list
-    assert_isinstance(value, list)
+    _assert_isinstance(value, list)
 
     # Loop over value and check items
     for item in value:
-        assert_isinstance(item, item_type)
+        _assert_isinstance(item, item_type)
 
     # Convert the list
-    return list([item_type(item) for item in value])
+    return value
 
 
 @typechecker
 def Dict(value, key_type=Any, value_type=Any):
     # Make sure value is a dictionary
-    assert_isinstance(value, dict)
+    _assert_isinstance(value, dict)
 
     # Loop over value and check items
     for _key, _value in value.items():
         # Check the key and value types
-        assert_isinstance(_key, key_type)
-        assert_isinstance(_value, value_type)
+        _assert_isinstance(_key, key_type)
+        _assert_isinstance(_value, value_type)
 
     # Loop over keys and values and check types
-    return dict({key_type(key): value_type(value) for key, value in value.items()})
+    return value
 
 
 @typechecker
 def Tuple(value, *item_types):
     # Make sure value is a tuple
-    if not isinstance(value, tuple):
-        raise TypeError("Value is not a tuple")
+    _assert_isinstance(value, tuple)
 
     # If types do not exist, return
     if not item_types:
         return value
 
     # Make sure value is of length
-    if len(value) != len(item_types):
-        raise TypeError("Value length is invalid")
+    _assert(len(value) == len(item_types), "Value length does not match types")
 
     # Check all item types
     for item, item_type in zip(value, item_types):
         # Check the item type
-        if not isinstance(item, item_type):
-            raise TypeError("Item %r is not an instance of %r" % (item, item_types))
+        _assert_isinstance(item, item_type)
 
     # Loop over values in tuple and validate them
-    return tuple(item_type(item) for item, item_type in zip(value, item_types))
+    return value
 
 
 @typechecker
 def Integer(value):
     # Make sure value is an int
-    if type(value) != int:
-        raise TypeError("Value is not an integer")
+    _assert_istype(value, int)
 
     # Return the value
     return value
@@ -133,8 +138,7 @@ def Integer(value):
 @typechecker
 def Float(value):
     # Make sure value is an float
-    if type(value) != float:
-        raise TypeError("Value is not a float")
+    _assert_istype(value, float)
 
     # Return the value
     return value
@@ -143,8 +147,7 @@ def Float(value):
 @typechecker
 def Bool(value):
     # Make sure the value is a bool
-    if type(value) != bool:
-        raise TypeError("Value is not a bool")
+    _assert_istype(value, bool)
 
     # Return the value
     return value
@@ -152,31 +155,35 @@ def Bool(value):
 
 @typechecker
 def Schema(value, schema):
-    # Make sure value is a dict
-    if not isinstance(value, dict):
-        raise TypeError("Value is not a dict")
+    # Make sure value and schema are dicts
+    _assert_isinstance(value, dict)
+    _assert_isinstance(schema, dict)
 
-    # Make sure schema is a dict
-    if not isinstance(schema, dict):
-        raise TypeError("Schema is not a dict")
+    # Loop over each key and value
+    for _key, _value_type in schema.items():
+        # Fetch the value from the dict
+        _value = value.get(_key)
 
-    # Make sure all of the keys exist
-    if set(value.keys()) - set(schema.keys()):
-        raise TypeError("Value keys and schema keys are not equal")
+        # If the value type is a sub-schema
+        if isinstance(_value_type, dict):
+            # Update value type with sub-schema
+            _value = Schema[_value_type]
+
+        # Validate the value
+        _assert_isinstance(_value, _value_type)
 
     # Make sure all items are valid
-    return {key: (value_type if not isinstance(value_type, dict) else Schema[value_type])(value.get(key)) for key, value_type in schema.items()}
+    return value
 
 
 @typechecker
 def Charset(value, chars):
     # Make sure value is a string
-    if not isinstance(value, Text):
-        raise TypeError("Value is not an instance of %r" % Text)
+    _assert_isinstance(value, Text)
 
     # Validate charset
-    if any(char not in chars for char in value):
-        raise TypeError("Value contains invalid characters")
+    for char in value:
+        _assert(char in chars, "Value contains invalid characters")
 
     # Validation has passed
     return value
@@ -185,20 +192,17 @@ def Charset(value, chars):
 @typechecker
 def Domain(value):
     # Make sure value is a string
-    if not isinstance(value, Text):
-        raise TypeError("Value is not an instance of %r" % Text)
+    _assert_isinstance(value, Text)
 
     # Split to parts by dot
     parts = value.split(".")
 
     # Make sure all parts are not empty
-    if not all(parts):
-        raise TypeError("Domain parts are invalid")
+    _assert(all(parts), "Value parts are invalid")
 
     # Loop over parts and validate characters
     for part in parts:
-        if not isinstance(part.lower(), Charset["abcdefghijklmnopqrstuvwxyz0123456789-"]):
-            raise TypeError("Domain part contains invalid characters")
+        _assert_isinstance(part.lower(), Charset["abcdefghijklmnopqrstuvwxyz0123456789-"])
 
     # Validation has passed
     return value
@@ -207,36 +211,30 @@ def Domain(value):
 @typechecker
 def Email(value):
     # Make sure value is a string
-    if not isinstance(value, Text):
-        raise TypeError("Value is not an instance of %r" % Text)
+    _assert_isinstance(value, Text)
 
     # Split into two (exactly)
     parts = value.split("@")
 
     # Make sure the length is 2
-    if len(parts) != 2:
-        raise TypeError("Email can't be split into address and domain")
+    _assert(len(parts) == 2, "Value can't be split into address and domain")
 
     # Make sure all parts are not empty
-    if not all(parts):
-        raise TypeError("Email parts are empty")
+    _assert(all(parts), "Value address and domain are empty")
 
     # Extract address and domain
     address, domain = parts
 
     # Make sure the domain is an FQDN
-    if not isinstance(domain, Domain):
-        raise TypeError("Email domain is not an instance of %r" % Domain)
+    _assert_isinstance(domain, Domain)
 
     # Make sure the address is valid
     for part in address.split("."):
         # Make sure part is not empty
-        if not part:
-            raise TypeError("Email address part is empty")
+        _assert(part, "Value part is empty")
 
         # Make sure part matches charset
-        if not isinstance(part, Charset["abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!#$%&'*+-/=?^_`{|}~"]):
-            raise TypeError("Email address part contains invalid characters")
+        _assert_isinstance(part, Charset["abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!#$%&'*+-/=?^_`{|}~"])
 
     # Validation has passed
     return value
@@ -245,8 +243,7 @@ def Email(value):
 @typechecker
 def Path(value):
     # Make sure value is a string
-    if not isinstance(value, Text):
-        raise TypeError("Value is not an instance of %r" % Text)
+    _assert_isinstance(value, Text)
 
     # Convert the path into a normal path
     value = os.path.normpath(value)
@@ -254,8 +251,7 @@ def Path(value):
     # Split the path by separator
     for part in value.split(os.path.sep):
         # Make sure the part is a valid path name
-        if not isinstance(part, PathName):
-            raise TypeError("Value part is not an instance of %r" % Text)
+        _assert_isinstance(part, PathName)
 
     # Path is valid
     return value
@@ -264,21 +260,18 @@ def Path(value):
 @typechecker
 def PathName(value):
     # Make sure value is a string
-    if not isinstance(value, Text):
-        raise TypeError("Value is not an instance of %r" % Text)
+    _assert_isinstance(value, Text)
 
     # Convert the path into a normal path
     value = os.path.normpath(value)
 
     # Make sure there are not path separators in the value
-    if os.path.sep in value:
-        raise TypeError("Path name contains path separator")
+    _assert(os.path.sep not in value)
 
     # Make sure the path does not contain invalid characters
     for char in value:
         # Check for forbidden characters
-        if char in ':"*?<>|':
-            raise TypeError("Path name contains invalid characters")
+        _assert(char not in ':"*?<>|', "Value contains invalid characters")
 
     # Pathname is valid
     return value

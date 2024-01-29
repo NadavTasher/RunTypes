@@ -13,7 +13,10 @@ def TypedTuple(name, fields):
             self = original_class.__new__(cls, *args, **kwargs)
 
             # Type-check and replace
-            self = self._replace(**{key: value_type(getattr(self, key)) for key, value_type in fields})
+            for key, value_type in fields:
+                # Make sure the attribute is an instance of the value type
+                if not isinstance(getattr(self, key), value_type):
+                    raise TypeError("Attribute {0} is not an instance of {1}".format(key, value_type))
 
             # Return the new tuple
             return self

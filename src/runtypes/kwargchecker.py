@@ -10,9 +10,10 @@ def kwargchecker(**types):
         @functools.wraps(function)
         def wrapper(*args, **kwargs):
             # Loop over type arguments
-            for name, typechecker in types.items():
-                # Execute type-check and update the value
-                kwargs[name] = typechecker(kwargs.get(name))
+            for key, value_type in types.items():
+                # Make sure the kwarg value is an instance of the value type
+                if not isinstance(kwargs.get(key), value_type):
+                    raise TypeError("Argument {0} is not an instance of {1}".format(key, value_type))
 
             # Call the target function
             return function(*args, **kwargs)

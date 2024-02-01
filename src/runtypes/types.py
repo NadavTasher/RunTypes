@@ -62,7 +62,12 @@ def Text(value):
     # Make sure the value is an instance of a string
     # In Python 2, u"".__class__ returns unicode
     # In Python 3, u"".__class__ returns str
-    _assert_isinstance(value, (str, u"".__class__))
+    if str == u"".__class__:
+        # Python 3, check for unicode is redundant
+        _assert_isinstance(value, str)
+    else:
+        # Python 2, check for unicode is required
+        _assert_isinstance(value, (str, u"".__class__))
 
     # Return the value
     return value

@@ -1,6 +1,6 @@
 [project]
 name = "runtypes"
-version = "0.4.1"
+version = "0.4.2"
 description = "A simple library for runtime validation of types."
 readme = "README.md"
 license = {file = "LICENSE"}

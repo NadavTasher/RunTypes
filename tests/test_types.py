@@ -99,6 +99,21 @@ def test_schema():
     assert not isinstance({"hello": "World", "number": 42, "boolean": True, "list-of-names": ["Jack", "James", "John"], "mapping-of-numbers": {42: "Meaning of life", 3.14: "Value of Pi", "Test": "Hello World"}}, schema)
 
 
+def test_path():
+    assert Path("/hello/world") == "/hello/world"
+    assert isinstance("/hello/world", Path)
+    assert isinstance("/hello/world/", Path)
+    assert not isinstance("/hello/world?", Path)
+    assert not isinstance("/hello/world/../../malicious", Path)
+
+
+def test_pathname():
+    assert PathName("world") == "world"
+    assert isinstance("world", PathName)
+    assert not isinstance("world?", PathName)
+    assert not isinstance("/world", PathName)
+
+
 def test_charset():
     assert Charset["HeloWrd "]("Hello World") == "Hello World"
     assert isinstance("Hello World", Charset["HeloWrd "])

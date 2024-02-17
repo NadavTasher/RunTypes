@@ -250,11 +250,14 @@ def Path(value):
     # Make sure value is a string
     _assert_isinstance(value, Text)
 
-    # Convert the path into a normal path
-    value = os.path.normpath(value)
+    # Create normal path from value
+    normpath = os.path.normpath(value)
+
+    # Make sure the path is safe to use
+    _assert(value in [normpath, normpath + os.path.sep], "Value is invalid")
 
     # Split the path by separator
-    for part in value.split(os.path.sep):
+    for part in normpath.split(os.path.sep):
         # Make sure the part is a valid path name
         _assert_isinstance(part, PathName)
 
@@ -271,7 +274,7 @@ def PathName(value):
     value = os.path.normpath(value)
 
     # Make sure there are not path separators in the value
-    _assert(os.path.sep not in value)
+    _assert(os.path.sep not in value, "Value contains path separator")
 
     # Make sure the path does not contain invalid characters
     for char in value:

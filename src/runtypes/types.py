@@ -1,22 +1,8 @@
 import os
+import re
 
 from runtypes.typechecker import typechecker
-
-
-def _assert(_condition, _error):
-    # Check the value and raise accordingly
-    if not _condition:
-        raise TypeError(_error)
-
-
-def _assert_istype(_value, _type):
-    # Check the instance
-    _assert(type(_value) == _type, "Value is not of type {0}".format(_type.__name__))
-
-
-def _assert_isinstance(_value, _type):
-    # Check the instance
-    _assert(isinstance(_value, _type), "Value is not an instance of {0}".format(_type))
+from runtypes.utilities import _assert, _assert_istype, _assert_isinstance
 
 
 @typechecker
@@ -172,25 +158,12 @@ def Schema(value, schema):
         # If the value type is a sub-schema
         if isinstance(_value_type, dict):
             # Update value type with sub-schema
-            _value = Schema[_value_type]
+            _value_type = Schema[_value_type]
 
         # Validate the value
         _assert_isinstance(_value, _value_type)
 
     # Make sure all items are valid
-    return value
-
-
-@typechecker
-def Charset(value, chars):
-    # Make sure value is a string
-    _assert_isinstance(value, Text)
-
-    # Validate charset
-    for char in value:
-        _assert(char in chars, "Value contains invalid characters")
-
-    # Validation has passed
     return value
 
 
@@ -239,7 +212,7 @@ def Email(value):
         _assert(part, "Value part is empty")
 
         # Make sure part matches charset
-        _assert_isinstance(part, Charset["abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!#$%&'*+-/=?^_`{|}~"])
+        _assert_isinstance(part.lower(), Charset["abcdefghijklmnopqrstuvwxyz0123456789+-_"])
 
     # Validation has passed
     return value
@@ -282,6 +255,34 @@ def PathName(value):
         _assert(char not in ':"*?<>|', "Value contains invalid characters")
 
     # Pathname is valid
+    return value
+
+
+@typechecker
+def Pattern(value, pattern, flags=re.DOTALL):
+    # Compile the pattern
+    match = re.match(pattern, value, flags)
+
+    # Make sure a match was found
+    _assert(match is not None, "Value did not match pattern")
+
+    # Make sure the match is a full match
+    _assert(match.string == value, "Value did not match pattern")
+
+    # Pattern was matched
+    return value
+
+
+@typechecker
+def Charset(value, chars):
+    # Make sure value is a string
+    _assert_isinstance(value, Text)
+
+    # Validate charset
+    for char in value:
+        _assert(char in chars, "Value contains invalid characters")
+
+    # Validation has passed
     return value
 
 

@@ -1,13 +1,15 @@
+from runtypes.utilities import _assert, _assert_isinstance
+
+
 class TypeChecker(object):
 
     def __init__(self, function, arguments=None):
         # Make sure the function is a callable
-        if not callable(function):
-            raise TypeError("Function must be callable")
+        _assert(callable(function), "Function must be callable")
 
         # Make sure arguments are a list or none
-        if arguments and not isinstance(arguments, list):
-            raise TypeError("Arguments must be a list")
+        if arguments:
+            _assert_isinstance(arguments, list)
 
         # Set the internal target function
         self._function = function
@@ -32,7 +34,7 @@ class TypeChecker(object):
             arguments = [argument]
 
         # Return a partial validator
-        return TypeChecker(self._function, self._arguments + arguments)
+        return self.__class__(self._function, self._arguments + arguments)
 
     def __call__(self, value):
         # Call the target function with all required arguments

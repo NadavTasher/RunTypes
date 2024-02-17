@@ -93,10 +93,11 @@ def test_bool():
 
 
 def test_schema():
-    schema = Schema[{"hello": Text, "number": Integer, "boolean": Bool, "list-of-names": List[Text], "mapping-of-numbers": Dict[Union[Integer, Float], Text]}]
-    assert schema({"hello": "World", "number": 42, "boolean": True, "list-of-names": ["Jack", "James", "John"], "mapping-of-numbers": {42: "Meaning of life", 3.14: "Value of Pi"}}) == {"hello": "World", "number": 42, "boolean": True, "list-of-names": ["Jack", "James", "John"], "mapping-of-numbers": {42: "Meaning of life", 3.14: "Value of Pi"}}
-    assert isinstance({"hello": "World", "number": 42, "boolean": True, "list-of-names": ["Jack", "James", "John"], "mapping-of-numbers": {42: "Meaning of life", 3.14: "Value of Pi"}}, schema)
-    assert not isinstance({"hello": "World", "number": 42, "boolean": True, "list-of-names": ["Jack", "James", "John"], "mapping-of-numbers": {42: "Meaning of life", 3.14: "Value of Pi", "Test": "Hello World"}}, schema)
+    schema = Schema[{"number": Integer, "list-of-names": List[Text], "mapping-of-numbers": Dict[Union[Integer, Float], Text], "sub-schema": {"text": Text}}]
+    assert schema({"number": 42, "list-of-names": ["Jack", "James", "John"], "mapping-of-numbers": {42: "Meaning of life", 3.14: "Value of Pi"}, "sub-schema": {"text": "Hello"}}) == {"number": 42, "list-of-names": ["Jack", "James", "John"], "mapping-of-numbers": {42: "Meaning of life", 3.14: "Value of Pi"}, "sub-schema": {"text": "Hello"}}
+    assert isinstance({"hello": "World", "number": 42, "boolean": True, "list-of-names": ["Jack", "James", "John"], "mapping-of-numbers": {42: "Meaning of life", 3.14: "Value of Pi"}, "sub-schema": {"text": "Hello"}}, schema)
+    assert not isinstance({"hello": "World", "number": 42, "boolean": True, "list-of-names": ["Jack", "James", "John"], "mapping-of-numbers": {42: "Meaning of life", 3.14: "Value of Pi", "Test": "Hello World"}, "sub-schema": {"text": "Hello"}}, schema)
+    assert not isinstance({"hello": "World", "number": 42, "boolean": True, "list-of-names": ["Jack", "James", "John"], "mapping-of-numbers": {42: "Meaning of life", 3.14: "Value of Pi"}, "sub-schema": {"text": 1}}, schema)
 
 
 def test_path():
@@ -112,12 +113,6 @@ def test_pathname():
     assert isinstance("world", PathName)
     assert not isinstance("world?", PathName)
     assert not isinstance("/world", PathName)
-
-
-def test_charset():
-    assert Charset["HeloWrd "]("Hello World") == "Hello World"
-    assert isinstance("Hello World", Charset["HeloWrd "])
-    assert not isinstance("Test", Charset["HeloWrd "])
 
 
 def test_domain():
@@ -139,6 +134,18 @@ def test_email():
     assert not isinstance(".@local.host", Email)
     assert not isinstance("hello.world@", Email)
     assert not isinstance("hello.world@.", Email)
+
+
+def test_pattern():
+    assert Pattern[r"A+"]("AAAAA") == "AAAAA"
+    assert isinstance("Hello World", Pattern[r"(\w(\s|))+"])
+    assert not isinstance("Hello World", Pattern[r"A+"])
+
+
+def test_charset():
+    assert Charset["HeloWrd "]("Hello World") == "Hello World"
+    assert isinstance("Hello World", Charset["HeloWrd "])
+    assert not isinstance("Test", Charset["HeloWrd "])
 
 
 def test_id():

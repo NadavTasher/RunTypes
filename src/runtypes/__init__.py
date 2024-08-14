@@ -4,3 +4,4 @@ from runtypes.typedtuple import TypedTuple, typedtuple
 from runtypes.typecaster import TypeCaster, typecaster
 from runtypes.typechecker import TypeChecker, typechecker
 from runtypes.kwargchecker import kwargchecker
+from runtypes.typehints import hintcheck, hintchecker

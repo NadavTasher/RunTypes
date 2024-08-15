@@ -13,7 +13,7 @@ def kwargchecker(**types):
             for key, value_type in types.items():
                 # Make sure the kwarg value is an instance of the value type
                 if not isinstance(kwargs.get(key), value_type):
-                    raise TypeError("Argument {0} is not an instance of {1}".format(key, value_type))
+                    raise TypeError(f"Argument {key!r} is not an instance of {value_type!r}")
 
             # Call the target function
             return function(*args, **kwargs)

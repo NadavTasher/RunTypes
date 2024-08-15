@@ -1,17 +1,15 @@
 import os
 import re
+import collections.abc
 
-from runtypes.typechecker import typechecker
-from runtypes.utilities import _assert, _assert_istype, _assert_isinstance
+from runtypes.types.checker import TypeChecker
+from runtypes.utilities.asserts import _assert, _assert_istype, _assert_isinstance
+
+# Any typechecker is a lambda short-circut
+Any = TypeChecker(lambda value: value, name="Any")
 
 
-@typechecker
-def Any(value):
-    return value
-
-
-@typechecker
-def Optional(value, optional_type=Any):
+def _optional(value, optional_type=Any):
     # Return if value is none
     if value is None:
         return
@@ -22,54 +20,48 @@ def Optional(value, optional_type=Any):
     # Validate further
     return value
 
+Optional = TypeChecker(_optional, name="Optional")
 
-@typechecker
-def Union(value, *value_types):
+
+
+def _union(value, *value_types):
     # Validate value with types
     for value_type in value_types:
         if isinstance(value, value_type):
             return value
 
     # Raise a value error
-    raise TypeError("Value is not an instance of one of the following types: {0}".format(value_types))
+    raise TypeError(f"Value is not an instance of one of the following types: {value_types!r}")
 
 
-@typechecker
-def Literal(value, *literal_values):
+Union = TypeChecker(_union, name="Union")
+
+def _literal(value, *literal_values):
     # Make sure value exists
-    _assert(value in literal_values, "Value is not one of {0}".format(literal_values))
+    _assert(value in literal_values, f"Value is not one of {literal_values}")
 
     # Return the value
     return value
 
+Literal = TypeChecker(_literal, name="Literal")
 
-@typechecker
-def Text(value):
+
+def _str(value):
     # Make sure the value is an instance of a string
-    # In Python 2, u"".__class__ returns unicode
-    # In Python 3, u"".__class__ returns str
-    if str == u"".__class__:
-        # Python 3, check for unicode is redundant
-        _assert_isinstance(value, str)
-    else:
-        # Python 2, check for unicode is required
-        _assert_isinstance(value, (str, u"".__class__))
+    _assert_isinstance(value, str)
 
-    # Return the value
-    return value
+Text = TypeChecker(str, _str, name="Text")
+AnyStr = TypeChecker(str, _str, name="AnyStr")
 
 
-@typechecker
-def Bytes(value):
+def _bytes(value):
     # Make sure the value is an instance of bytes
     _assert_isinstance(value, bytes)
 
-    # Return the value
-    return value
+ByteString = TypeChecker(bytes, _bytes, name="ByteString")
 
 
-@typechecker
-def List(value, item_type=Any):
+def _list_check(value, item_type=Any):
     # Make sure value is a list
     _assert_isinstance(value, list)
 
@@ -77,12 +69,27 @@ def List(value, item_type=Any):
     for item in value:
         _assert_isinstance(item, item_type)
 
-    # Convert the list
-    return value
+def _list_cast(value, item_type=Any):
+    # Make sure value is a list
+    _assert_isinstance(value, collections.abc.Sequence)
+
+    # Loop over value and cast items
+    return [item_type(item) for item in value]
+
+List = TypeChecker(_list_cast, _list_check, name="List")
 
 
-@typechecker
-def Dict(value, key_type=Any, value_type=Any):
+
+
+def _dict_cast(value, key_type, value_type):
+    # Make sure value is a dictionary
+    _assert_isinstance(value, collections.abc.Mapping)
+
+    # Loop over value and cast items
+    return {key_type(_key): value_type(_value) for _key, _value in value.items()}
+
+
+def _dict_check(value, key_type=Any, value_type=Any):
     # Make sure value is a dictionary
     _assert_isinstance(value, dict)
 
@@ -95,9 +102,19 @@ def Dict(value, key_type=Any, value_type=Any):
     # Loop over keys and values and check types
     return value
 
+Dict = TypeChecker(_dict_cast, _dict_check, name="Dict")
 
-@typechecker
-def Tuple(value, *item_types):
+def _tuple_cast(value, *item_types):
+    # Make sure value is a tuple
+    _assert_isinstance(value, collections.abc.Sequence)
+
+    # Make sure value is of length
+    _assert(len(value) == len(item_types), "Value length does not match types")
+
+    # Check all item types
+    return tuple(item_type(item) for item, item_type in zip(value, item_types))
+
+def _tuple_check(value, *item_types):
     # Make sure value is a tuple
     _assert_isinstance(value, tuple)
 
@@ -116,36 +133,33 @@ def Tuple(value, *item_types):
     # Loop over values in tuple and validate them
     return value
 
+Tuple = TypeChecker(_tuple_cast, _tuple_check, name="Tuple")
 
-@typechecker
-def Integer(value):
-    # Make sure value is an int
-    _assert_istype(value, int)
+def _schema_cast(value, schema):
+    # Make sure value and schema are dicts
+    _assert_isinstance(value, dict)
+    _assert_isinstance(schema, dict)
 
-    # Return the value
-    return value
+    # Create output dictionary
+    output = dict()
 
+    # Loop over each key and value
+    for _key, _value_type in schema.items():
+        # Fetch the value from the dict
+        _value = value.get(_key)
 
-@typechecker
-def Float(value):
-    # Make sure value is an float
-    _assert_istype(value, float)
+        # If the value type is a sub-schema
+        if isinstance(_value_type, dict):
+            # Update value type with sub-schema
+            _value_type = SchemaCast[_value_type]
 
-    # Return the value
-    return value
+        # Cast the value and place in output
+        output[_key] = _value_type(_value)
 
+    # Make sure all items are valid
+    return output
 
-@typechecker
-def Bool(value):
-    # Make sure the value is a bool
-    _assert_istype(value, bool)
-
-    # Return the value
-    return value
-
-
-@typechecker
-def Schema(value, schema):
+def _schema_check(value, schema):
     # Make sure value and schema are dicts
     _assert_isinstance(value, dict)
     _assert_isinstance(schema, dict)
@@ -166,6 +180,7 @@ def Schema(value, schema):
     # Make sure all items are valid
     return value
 
+Schema = TypeChecker(_schema_cast, _schema_check, name="Schema")
 
 @typechecker
 def Domain(value):

@@ -23,40 +23,11 @@ def DictCast(value, key_type, value_type):
 
 @typecaster
 def TupleCast(value, *item_types):
-    # Make sure value is a tuple
-    _assert_isinstance(value, tuple)
 
-    # Make sure value is of length
-    _assert(len(value) == len(item_types), "Value length does not match types")
-
-    # Check all item types
-    return tuple(item_type(item) for item, item_type in zip(value, item_types))
 
 
 @typecaster
-def SchemaCast(value, schema):
-    # Make sure value and schema are dicts
-    _assert_isinstance(value, dict)
-    _assert_isinstance(schema, dict)
 
-    # Create output dictionary
-    output = dict()
-
-    # Loop over each key and value
-    for _key, _value_type in schema.items():
-        # Fetch the value from the dict
-        _value = value.get(_key)
-
-        # If the value type is a sub-schema
-        if isinstance(_value_type, dict):
-            # Update value type with sub-schema
-            _value_type = SchemaCast[_value_type]
-
-        # Cast the value and place in output
-        output[_key] = _value_type(_value)
-
-    # Make sure all items are valid
-    return output
 
 
 @typecaster

@@ -13,7 +13,7 @@ def hintcheck(function, args, kwargs):
     parameters = dict()
 
     # Loop over variable names and fetch the respective variable
-    for index, (name, parameter) in enumerate(signature.parameters):
+    for index, (name, parameter) in enumerate(signature.parameters.items()):
         # Check whether the argument is provided via args
         if index < len(args):
             parameters[name] = args[index]
@@ -26,7 +26,7 @@ def hintcheck(function, args, kwargs):
 
         # Check whether the argument is provided via defaults
         if parameter.default is not inspect._empty:
-            parameters[name] = parameters.default
+            parameters[name] = parameter.default
             continue
 
         # Argument was not provided!

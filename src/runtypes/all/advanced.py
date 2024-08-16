@@ -6,7 +6,7 @@ from runtypes.runtype import RunType, _assert, _assert_istype, _assert_isinstanc
 from runtypes.all.basic import Any, AnyStr
 
 
-def _schema_cast(value, schema) -> dict:
+def _schema_cast(value: typing.Any, schema: typing.Dict[str, typing.Any]) -> typing.Dict[str, typing.Any]:
     # Make sure value and schema are dicts
     _assert_isinstance(value, dict)
     _assert_isinstance(schema, dict)
@@ -31,7 +31,7 @@ def _schema_cast(value, schema) -> dict:
     return output
 
 
-def _schema_check(value, schema) -> None:
+def _schema_check(value: typing.Any, schema: typing.Dict[str, typing.Any]) -> None:
     # Make sure value and schema are dicts
     _assert_isinstance(value, dict)
     _assert_isinstance(schema, dict)
@@ -49,14 +49,14 @@ def _schema_check(value, schema) -> None:
             # Validate the value
             _assert_isinstance(_value, _value_type)
 
-def _charset_cast(value, chars):
+def _charset_cast(value: typing.Any, chars: str) -> str:
     # Make sure value is a string
     _assert_isinstance(value, AnyStr)
 
     # Return the string with only the valid characters
     return str().join(char for char in value if char in chars)
 
-def _charset_check(value, chars):
+def _charset_check(value: typing.Any, chars: str) -> None:
     # Make sure value is a string
     _assert_isinstance(value, AnyStr)
 
@@ -65,7 +65,7 @@ def _charset_check(value, chars):
         _assert(char in chars, "Value contains invalid characters")
 
 
-def _domain_check(value) -> None:
+def _domain_check(value: typing.Any) -> None:
     # Make sure value is a string
     _assert_isinstance(value, AnyStr)
 
@@ -107,10 +107,7 @@ def _email_check(value: typing.Any) -> None:
         # Make sure part matches charset
         _assert_isinstance(part.lower(), Charset["abcdefghijklmnopqrstuvwxyz0123456789+-_"])
 
-    # Validation has passed
-    return value
-
-def _pathname_check(value):
+def _pathname_check(value: typing.Any) -> None:
     # Make sure value is a string
     _assert_isinstance(value, AnyStr)
 
@@ -125,7 +122,7 @@ def _pathname_check(value):
         # Check for forbidden characters
         _assert(char not in ':"*?<>|', "Value contains invalid characters")
 
-def _path_check(value):
+def _path_check(value: typing.Any) -> None:
     # Make sure value is a string
     _assert_isinstance(value, AnyStr)
 
@@ -141,7 +138,7 @@ def _path_check(value):
         _pathname_check(part)
 
 
-def _pattern_check(value, pattern, flags=re.DOTALL):
+def _pattern_check(value: typing.Any, pattern: str, flags: int = re.DOTALL) -> None:
     # Compile the pattern
     match = re.match(pattern, value, flags)
 

@@ -6,7 +6,7 @@ from runtypes.all.basic import Any
 from runtypes.runtype import RunType
 
 
-def resolve_function_types(function: typing.Callable[..., typing.Any]) -> typing.Dict[str, type | RunType]:
+def resolve_function_types(function: typing.Callable[..., typing.Any]) -> typing.Dict[str, type]:
     # Create a dictionary of types
     return {
         # Any as default, annotation if defined
@@ -16,7 +16,7 @@ def resolve_function_types(function: typing.Callable[..., typing.Any]) -> typing
     }
 
 
-def resolve_function_arguments(function: typing.Callable[..., typing.Any], args: typing.List[typing.Any], kwargs: typing.Dict[str, typing.Any], strict: bool=False) -> typing.Dict[str, typing.Any]:
+def resolve_function_arguments(function: typing.Callable[..., typing.Any], args: typing.Sequence[typing.Any], kwargs: typing.Dict[str, typing.Any], strict: bool=False) -> typing.Dict[str, typing.Any]:
     # Get the function signature
     signature = inspect.signature(function)
 
@@ -48,7 +48,7 @@ def resolve_function_arguments(function: typing.Callable[..., typing.Any], args:
     return arguments
 
 
-def cast_type_hints(function: typing.Callable[..., typing.Any], args: typing.List[typing.Any], kwargs: typing.Dict[str, typing.Any]) -> typing.Dict[str, typing.Any]:
+def cast_type_hints(function: typing.Callable[..., typing.Any], args: typing.Sequence[typing.Any], kwargs: typing.Dict[str, typing.Any]) -> typing.Dict[str, typing.Any]:
     # Resolve function types and arguments
     types = resolve_function_types(function)
     arguments = resolve_function_arguments(function, args, kwargs)
@@ -62,7 +62,7 @@ def cast_type_hints(function: typing.Callable[..., typing.Any], args: typing.Lis
     }
 
 
-def check_type_hints(function: typing.Callable[..., typing.Any], args: typing.List[typing.Any], kwargs: typing.Dict[str, typing.Any]) -> None:
+def check_type_hints(function: typing.Callable[..., typing.Any], args: typing.Sequence[typing.Any], kwargs: typing.Dict[str, typing.Any]) -> None:
     # Resolve function types and arguments
     types = resolve_function_types(function)
     arguments = resolve_function_arguments(function, args, kwargs)
@@ -77,7 +77,7 @@ def check_type_hints(function: typing.Callable[..., typing.Any], args: typing.Li
 def typecast(function: typing.Callable[..., typing.Any]) -> typing.Callable[..., typing.Any]:
 
     @functools.wraps(function)
-    def wrapper(*args: typing.Any, **kwargs: typing.Any):
+    def wrapper(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
         # Check the type hints
         arguments = cast_type_hints(function, args, kwargs)
 
@@ -91,7 +91,7 @@ def typecast(function: typing.Callable[..., typing.Any]) -> typing.Callable[...,
 def typecheck(function: typing.Callable[..., typing.Any]) -> typing.Callable[..., typing.Any]:
 
     @functools.wraps(function)
-    def wrapper(*args: typing.Any, **kwargs: typing.Any):
+    def wrapper(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
         # Check the type hints
         check_type_hints(function, args, kwargs)
 

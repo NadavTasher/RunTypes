@@ -12,21 +12,19 @@ def _assert_istype(_value: typing.Any, _type: type) -> None:
     _assert(type(_value) == _type, f"Value is not of type {_type.__name__}")
 
 
-def _assert_isinstance(_value: typing.Any, _type: typing.Union[type, typing.Sequence[type]]) -> None:
+def _assert_isinstance(_value: typing.Any, _type: typing.Any) -> None:
     # Check the instance
     _assert(isinstance(_value, _type), f"Value is not an instance of {_type}")
 
 
-class RunType(typing.NewType):
+class RunType(object):
 
-    __metaclass__ = typing.Type
-
-    def __init__(self, name: str, caster: typing.Optional[typing.Callable[[typing.Any, ...], typing.Any]] = None, checker: typing.Optional[typing.Callable[[typing.Any, ...], None]]=None, arguments: typing.List[typing.Type] = []) -> None:
+    def __init__(self, name: str, caster: typing.Optional[typing.Callable[..., typing.Any]] = None, checker: typing.Optional[typing.Callable[..., None]]=None, arguments: typing.List[type] = []) -> None:
         # Make sure the name is a string
         _assert_istype(name, str)
 
         # Make sure at least one of caster or checker are defined
-        _assert(caster or checker, "At least one of caster or checker must be defined")
+        _assert(any([caster, checker]), "At least one of caster or checker must be defined")
 
         # Make sure the caster is callable if defined
         if caster is not None:
@@ -48,8 +46,9 @@ class RunType(typing.NewType):
         self._checker = checker
         self._arguments = arguments
 
-        # Initialize the type
-        super(RunType, self).__init__(self._name, self)
+    def __subclasscheck__(self, subclass: type) -> bool:
+        # Make sure the subclass is literally type
+        return subclass == type
     
     def cast(self, value: typing.Any) -> typing.Any:
         # If the type caster is defined, execute it
@@ -91,7 +90,7 @@ class RunType(typing.NewType):
             # Type-checking failed
             return False
 
-    def __getitem__(self, argument: typing.Any) -> RunType:
+    def __getitem__(self, argument: typing.Any) -> "RunType":
         # Make sure object is not already subscripted
         if self._arguments:
             raise NotImplementedError(f"Cannot subscript an already subscripted type {self!r}")
@@ -118,5 +117,5 @@ class RunType(typing.NewType):
 
 
 # Decorator for easy typechecker creating
-def typechecker(function) -> RunType:
+def typechecker(function: typing.Callable[..., typing.Any]) -> RunType:
     return RunType(function.__name__, function)

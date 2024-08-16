@@ -8,16 +8,19 @@ from runtypes.runtype import RunType, _assert, _assert_istype, _assert_isinstanc
 # Any is the most basic type and is used by other types, hence defined here
 Any = RunType("Any", lambda value: value)
 
-def _union_check(value: typing.Any, *value_types: type | RunType):
+def _union_check(value: typing.Any, *value_types: type) -> None:
     # Make sure the value is an instance of one of the types
     _assert_isinstance(value, tuple(value_types))
 
-def _optional_cast(value: typing.Any, optional_type: typing.Optional[type | RunType] = Any) -> typing.Optional[typing.Any]:
-    # If the value is defined, cast it to the right type
-    if value is not None:
-        return optional_type(value)
+def _optional_cast(value: typing.Any, optional_type: type = Any) -> typing.Optional[typing.Any]:
+    # If the value is not defined, return None
+    if value is None:
+        return None
+    
+    # Cast the value to the right type
+    return optional_type(value)
 
-def _optional_check(value: typing.Any, optional_type: typing.Optional[type | RunType]=Any) -> None:
+def _optional_check(value: typing.Any, optional_type: type=Any) -> None:
     # If the value is defined, make sure it is the right type
     if value is not None:
         _assert_isinstance(value, optional_type)
@@ -47,7 +50,7 @@ def _bytestring_check(value: typing.Any) -> None:
     _assert_isinstance(value, (bytes, bytearray))
 
 
-def _list_cast(value: typing.Any, item_type: type | RunType =Any) -> typing.List[typing.Any]:
+def _list_cast(value: typing.Any, item_type: type =Any) -> typing.List[typing.Any]:
     # Make sure value is a list
     _assert_isinstance(value, collections.abc.Sequence)
 
@@ -55,7 +58,7 @@ def _list_cast(value: typing.Any, item_type: type | RunType =Any) -> typing.List
     return [item_type(item) for item in value]
 
 
-def _list_check(value: typing.Any, item_type:type | RunType=Any) -> None:
+def _list_check(value: typing.Any, item_type:type=Any) -> None:
     # Make sure value is a list
     _assert_isinstance(value, list)
 
@@ -64,7 +67,7 @@ def _list_check(value: typing.Any, item_type:type | RunType=Any) -> None:
         _assert_isinstance(item, item_type)
 
 
-def _dict_cast(value: typing.Any, key_type: type | RunType=Any, value_type: type | RunType=Any) -> typing.Dict[typing.Any, typing.Any]:
+def _dict_cast(value: typing.Any, key_type: type=Any, value_type: type=Any) -> typing.Dict[typing.Any, typing.Any]:
     # Make sure value is a dictionary
     _assert_isinstance(value, collections.abc.Mapping)
 
@@ -72,7 +75,7 @@ def _dict_cast(value: typing.Any, key_type: type | RunType=Any, value_type: type
     return {key_type(_key): value_type(_value) for _key, _value in value.items()}
 
 
-def _dict_check(value:typing.Any, key_type:type | RunType=Any, value_type: type | RunType=Any) -> None:
+def _dict_check(value:typing.Any, key_type:type=Any, value_type: type=Any) -> None:
     # Make sure value is a dictionary
     _assert_isinstance(value, dict)
 
@@ -82,17 +85,14 @@ def _dict_check(value:typing.Any, key_type:type | RunType=Any, value_type: type 
         _assert_isinstance(_key, key_type)
         _assert_isinstance(_value, value_type)
 
-    # Loop over keys and values and check types
-    return value
 
-
-def _tuple_cast(value: typing.Any, *item_types: type | RunType) -> tuple:
+def _tuple_cast(value: typing.Any, *item_types: type) -> typing.Tuple[typing.Any, ...]:
     # Make sure value is a tuple
     _assert_isinstance(value, collections.abc.Sequence)
 
     # If types do not exist, return
     if not item_types:
-        return value
+        return tuple(value)
 
     # Make sure value is of length
     _assert(len(value) == len(item_types), "Value length does not match types")
@@ -101,7 +101,7 @@ def _tuple_cast(value: typing.Any, *item_types: type | RunType) -> tuple:
     return tuple(item_type(item) for item, item_type in zip(value, item_types))
 
 
-def _tuple_check(value: typing.Any, *item_types: type | RunType) -> None:
+def _tuple_check(value: typing.Any, *item_types: type) -> None:
     # Make sure value is a tuple
     _assert_isinstance(value, tuple)
 

@@ -1,6 +1,6 @@
 import pytest
 
-from runtypes.types import *
+from runtypes import *
 
 
 def test_any():

@@ -1,58 +1,97 @@
 import inspect
 import functools
 
-from runtypes.types import Any
-from runtypes.utilities import _assert_isinstance
+from runtypes.all.basic import Any
 
 
-def hintcheck(function, args, kwargs):
+def resolve_function_types(function):
+    # Create a dictionary of types
+    return {
+        # Any as default, annotation if defined
+        name: Any if parameter.annotation is inspect._empty else parameter.annotation
+        # For all signature parameters
+        for name, parameter in inspect.signature(function).parameters.items()
+    }
+
+
+def resolve_function_arguments(function, args, kwargs, strict=False):
     # Get the function signature
     signature = inspect.signature(function)
 
-    # Create a dictionary with all parameters
-    parameters = dict()
+    # Create a dictionary for arguments
+    arguments = {}
 
     # Loop over variable names and fetch the respective variable
     for index, (name, parameter) in enumerate(signature.parameters.items()):
         # Check whether the argument is provided via args
         if index < len(args):
-            parameters[name] = args[index]
+            arguments[name] = args[index]
             continue
 
         # Check whether the argument is provided via kwargs
         if name in kwargs:
-            parameters[name] = kwargs[name]
+            arguments[name] = kwargs[name]
             continue
 
         # Check whether the argument is provided via defaults
         if parameter.default is not inspect._empty:
-            parameters[name] = parameter.default
+            arguments[name] = parameter.default
             continue
 
         # Argument was not provided!
+        if strict:
+            raise KeyError(f"Argument {name!r} was not provided")
 
-    # Validate all types
-    for name, value in parameters.items():
-        # Fetch type annotation
-        annotation = signature.parameters[name].annotation
-
-        # If there is no annotation, continue
-        if annotation is inspect._empty:
-            continue
-
-        # Make sure the type is correct
-        if not isinstance(value, annotation):
-            raise TypeError(f"Argument {name!r} is not an instance of {annotation!r}")
+    # Return the arguments
+    return arguments
 
 
-# Create a decorator generator
-def hintchecker(function):
+def cast_type_hints(function, args, kwargs):
+    # Resolve function types and arguments
+    types = resolve_function_types(function)
+    arguments = resolve_function_arguments(function, args, kwargs)
 
-    # Generate a decorator
+    # Create a casted dictionary with all items
+    return {
+        # Cast the argument using the argument type
+        argument_name: argument_type(arguments.get(argument_name))
+        # For all provided types
+        for argument_name, argument_type in types.items()
+    }
+
+
+def check_type_hints(function, args, kwargs):
+    # Resolve function types and arguments
+    types = resolve_function_types(function)
+    arguments = resolve_function_arguments(function, args, kwargs)
+
+    # Loop over the provided types and check them
+    for argument_name, argument_type in types.items():
+        # Check the argument type
+        if not isinstance(arguments.get(argument_name), argument_type):
+            raise TypeError(f"Argument {argument_name!r} is not an instance of {argument_type!r}")
+
+
+def typecast(function):
+
     @functools.wraps(function)
     def wrapper(*args, **kwargs):
         # Check the type hints
-        hintcheck(function, args, kwargs)
+        arguments = cast_type_hints(function, args, kwargs)
+
+        # Call the target function
+        return function(**arguments)
+
+    # Return the decorator
+    return wrapper
+
+
+def typecheck(function):
+
+    @functools.wraps(function)
+    def wrapper(*args, **kwargs):
+        # Check the type hints
+        check_type_hints(function, args, kwargs)
 
         # Call the target function
         return function(*args, **kwargs)

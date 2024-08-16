@@ -1,11 +1,25 @@
 import typing
 
-from runtypes.utilities import _assert, _assert_isinstance
+
+def _assert(_condition, _error):
+    # Check the value and raise accordingly
+    if not _condition:
+        raise TypeError(_error)
 
 
-class TypeChecker(object):
+def _assert_istype(_value, _type):
+    # Check the instance
+    _assert(type(_value) == _type, f"Value is not of type {_type.__name__}")
 
-    def __init__(self, caster, checker=None, arguments=None, name=None) -> None:
+
+def _assert_isinstance(_value, _type):
+    # Check the instance
+    _assert(isinstance(_value, _type), f"Value is not an instance of {_type}")
+
+
+class RunType(typing.NewType):
+
+    def __init__(self, name, caster, checker=None, arguments=None) -> None:
 
         # Make sure the caster is callable
         _assert(callable(caster), "Caster must be callable")
@@ -19,12 +33,15 @@ class TypeChecker(object):
             _assert_isinstance(arguments, list)
 
         # Decide the name
-        self._name = name or caster.__name__
+        self._name = name
 
         # Set internal checker and caster
         self._caster = caster
         self._checker = checker
         self._arguments = arguments or list()
+
+        # Initialize the type
+        super(RunType, self).__init__(self._name, self)
 
     def __instancecheck__(self, value: typing.Any) -> bool:
         try:
@@ -49,17 +66,16 @@ class TypeChecker(object):
 
             # Nothing more to do
             return
-        
+
         # Check using the type caster
         if value != self.cast(value):
             raise TypeError(f"Casted value does not equal given value")
 
-
     def __getitem__(self, argument):
         # Make sure object is not already subscripted
-        if self._arguments is not None:
+        if self._arguments:
             raise NotImplementedError(f"Cannot subscript an already subscripted type {self!r}")
-        
+
         # Convert index into list
         if isinstance(argument, tuple):
             arguments = list(argument)
@@ -67,7 +83,7 @@ class TypeChecker(object):
             arguments = [argument]
 
         # Return a subscripted validator
-        return self.__class__(self._caster, self._checker, arguments, self._name)
+        return self.__class__(caster=self._caster, checker=self._checker, name=self._name, arguments=arguments)
 
     def __call__(self, value: typing.Any) -> typing.Any:
         # Try casting the value
@@ -78,12 +94,13 @@ class TypeChecker(object):
         representation = self._name
 
         # If there are any arguments, add them to the representation
-        if self._arguments is not None:
+        if self._arguments:
             representation += repr(self._arguments)
 
         # Return the generated representation
         return representation
 
 
-# Create lower-case name for ease-of-use
-typechecker = TypeChecker
+# Decorator for easy typechecker creating
+def typechecker(function):
+    return RunType(function.__name__, function)

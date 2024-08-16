@@ -1,6 +1,6 @@
 # Import runtypes
 from runtypes.all.basic import *
-# from runtypes.all.advanced_types import *
+from runtypes.all.advanced import *
 
 # Import type hint utilities
 from runtypes.utilities.hints import cast_type_hints, check_type_hints, typecast, typecheck

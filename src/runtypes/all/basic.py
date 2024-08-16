@@ -1,54 +1,53 @@
-import os
-import re
+import typing
 import collections.abc
 
 from runtypes.runtype import RunType, _assert, _assert_istype, _assert_isinstance
 
+
+
 # Any is the most basic type and is used by other types, hence defined here
 Any = RunType("Any", lambda value: value)
 
+def _union_check(value: typing.Any, *value_types: type | RunType):
+    # Make sure the value is an instance of one of the types
+    _assert_isinstance(value, tuple(value_types))
 
-def _optional(value, optional_type=Any):
-    # Return if value is none
-    if value is None:
-        return
+def _optional_cast(value: typing.Any, optional_type: typing.Optional[type | RunType] = Any) -> typing.Optional[typing.Any]:
+    # If the value is defined, cast it to the right type
+    if value is not None:
+        return optional_type(value)
 
-    # Check the optional type
-    _assert_isinstance(value, optional_type)
+def _optional_check(value: typing.Any, optional_type: typing.Optional[type | RunType]=Any) -> None:
+    # If the value is defined, make sure it is the right type
+    if value is not None:
+        _assert_isinstance(value, optional_type)
 
-    # Validate further
-    return value
-
-
-def _union(value, *value_types):
-    # Validate value with types
-    for value_type in value_types:
-        if isinstance(value, value_type):
-            return value
-
-    # Raise a value error
-    raise TypeError(f"Value is not an instance of one of the following types: {value_types!r}")
-
-
-def _literal(value, *literal_values):
+def _literal_check(value: typing.Any, *literal_values: typing.Any) -> None:
     # Make sure value exists
-    _assert(value in literal_values, f"Value is not one of {literal_values}")
+    _assert(value in literal_values, f"Value is not one of {literal_values!r}")
 
-    # Return the value
-    return value
+def _float_check(value: typing.Any) -> None:
+    # Make sure the value is of type float
+    _assert_istype(value, float)
 
+def _integer_check(value: typing.Any) -> None:
+    # Make sure the value is of type int
+    _assert_istype(value, int)
 
-def _string_check(value):
+def _boolean_check(value: typing.Any) -> None:
+    # Make sure the value is of type bool
+    _assert_istype(value, bool)
+
+def _string_check(value: typing.Any) -> None:
     # Make sure the value is an instance of a string
-    _assert_isinstance(value, (str, u"".__class__))
+    _assert_istype(value, str)
 
-
-def _bytestring_check(value):
+def _bytestring_check(value: typing.Any) -> None:
     # Make sure the value is an instance of bytes
     _assert_isinstance(value, (bytes, bytearray))
 
 
-def _list_cast(value, item_type=Any):
+def _list_cast(value: typing.Any, item_type: type | RunType =Any) -> typing.List[typing.Any]:
     # Make sure value is a list
     _assert_isinstance(value, collections.abc.Sequence)
 
@@ -56,7 +55,7 @@ def _list_cast(value, item_type=Any):
     return [item_type(item) for item in value]
 
 
-def _list_check(value, item_type=Any):
+def _list_check(value: typing.Any, item_type:type | RunType=Any) -> None:
     # Make sure value is a list
     _assert_isinstance(value, list)
 
@@ -65,7 +64,7 @@ def _list_check(value, item_type=Any):
         _assert_isinstance(item, item_type)
 
 
-def _dict_cast(value, key_type=Any, value_type=Any):
+def _dict_cast(value: typing.Any, key_type: type | RunType=Any, value_type: type | RunType=Any) -> typing.Dict[typing.Any, typing.Any]:
     # Make sure value is a dictionary
     _assert_isinstance(value, collections.abc.Mapping)
 
@@ -73,7 +72,7 @@ def _dict_cast(value, key_type=Any, value_type=Any):
     return {key_type(_key): value_type(_value) for _key, _value in value.items()}
 
 
-def _dict_check(value, key_type=Any, value_type=Any):
+def _dict_check(value:typing.Any, key_type:type | RunType=Any, value_type: type | RunType=Any) -> None:
     # Make sure value is a dictionary
     _assert_isinstance(value, dict)
 
@@ -87,20 +86,9 @@ def _dict_check(value, key_type=Any, value_type=Any):
     return value
 
 
-def _tuple_cast(value, *item_types):
+def _tuple_cast(value: typing.Any, *item_types: type | RunType) -> tuple:
     # Make sure value is a tuple
     _assert_isinstance(value, collections.abc.Sequence)
-
-    # Make sure value is of length
-    _assert(len(value) == len(item_types), "Value length does not match types")
-
-    # Check all item types
-    return tuple(item_type(item) for item, item_type in zip(value, item_types))
-
-
-def _tuple_check(value, *item_types):
-    # Make sure value is a tuple
-    _assert_isinstance(value, tuple)
 
     # If types do not exist, return
     if not item_types:
@@ -110,25 +98,42 @@ def _tuple_check(value, *item_types):
     _assert(len(value) == len(item_types), "Value length does not match types")
 
     # Check all item types
+    return tuple(item_type(item) for item, item_type in zip(value, item_types))
+
+
+def _tuple_check(value: typing.Any, *item_types: type | RunType) -> None:
+    # Make sure value is a tuple
+    _assert_isinstance(value, tuple)
+
+    # If types do not exist, return
+    if not item_types:
+        return
+
+    # Make sure value is of length
+    _assert(len(value) == len(item_types), "Value length does not match types")
+
+    # Check all item types
     for item, item_type in zip(value, item_types):
         # Check the item type
         _assert_isinstance(item, item_type)
 
-    # Loop over values in tuple and validate them
-    return value
-
 
 # Generic types
-Union = RunType("Union", _union)
-Literal = RunType("Literal", _literal)
-Optional = RunType("Optional", _optional)
+Union = RunType("Union", checker=_union_check)
+Literal = RunType("Literal", checker=_literal_check)
+Optional = RunType("Optional", caster=_optional_cast, checker=_optional_check)
 
-# Text and byte types
-Text = RunType("Text", str, _string_check)
-AnyStr = RunType("AnyStr", str, _string_check)
-ByteString = RunType("ByteString", bytes, _bytestring_check)
+# Built-in types
+Text = RunType("Text", caster=str, checker=_string_check)
+AnyStr = RunType("AnyStr", caster=str, checker=_string_check)
+ByteString = RunType("ByteString", caster=bytes, checker=_bytestring_check)
+
+# Built-in extension types
+Float = RunType("Float", caster=float, checker=_float_check)
+Integer = RunType("Integer", caster=int, checker=_integer_check)
+Boolean = RunType("Boolean", caster=bool, checker=_boolean_check)
 
 # Container types
-List = RunType("List", _list_cast, _list_check)
-Dict = RunType("Dict", _dict_cast, _dict_check)
-Tuple = RunType("Tuple", _tuple_cast, _tuple_check)
+List = RunType("List", caster=_list_cast, checker=_list_check)
+Dict = RunType("Dict", caster=_dict_cast, checker=_dict_check)
+Tuple = RunType("Tuple", caster=_tuple_cast, checker=_tuple_check)

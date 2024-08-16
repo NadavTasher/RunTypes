@@ -1,10 +1,12 @@
+import typing
 import inspect
 import functools
 
 from runtypes.all.basic import Any
+from runtypes.runtype import RunType
 
 
-def resolve_function_types(function):
+def resolve_function_types(function: typing.Callable[..., typing.Any]) -> typing.Dict[str, type | RunType]:
     # Create a dictionary of types
     return {
         # Any as default, annotation if defined
@@ -14,7 +16,7 @@ def resolve_function_types(function):
     }
 
 
-def resolve_function_arguments(function, args, kwargs, strict=False):
+def resolve_function_arguments(function: typing.Callable[..., typing.Any], args: typing.List[typing.Any], kwargs: typing.Dict[str, typing.Any], strict: bool=False) -> typing.Dict[str, typing.Any]:
     # Get the function signature
     signature = inspect.signature(function)
 
@@ -46,7 +48,7 @@ def resolve_function_arguments(function, args, kwargs, strict=False):
     return arguments
 
 
-def cast_type_hints(function, args, kwargs):
+def cast_type_hints(function: typing.Callable[..., typing.Any], args: typing.List[typing.Any], kwargs: typing.Dict[str, typing.Any]) -> typing.Dict[str, typing.Any]:
     # Resolve function types and arguments
     types = resolve_function_types(function)
     arguments = resolve_function_arguments(function, args, kwargs)
@@ -60,7 +62,7 @@ def cast_type_hints(function, args, kwargs):
     }
 
 
-def check_type_hints(function, args, kwargs):
+def check_type_hints(function: typing.Callable[..., typing.Any], args: typing.List[typing.Any], kwargs: typing.Dict[str, typing.Any]) -> None:
     # Resolve function types and arguments
     types = resolve_function_types(function)
     arguments = resolve_function_arguments(function, args, kwargs)
@@ -72,10 +74,10 @@ def check_type_hints(function, args, kwargs):
             raise TypeError(f"Argument {argument_name!r} is not an instance of {argument_type!r}")
 
 
-def typecast(function):
+def typecast(function: typing.Callable[..., typing.Any]) -> typing.Callable[..., typing.Any]:
 
     @functools.wraps(function)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: typing.Any, **kwargs: typing.Any):
         # Check the type hints
         arguments = cast_type_hints(function, args, kwargs)
 
@@ -86,10 +88,10 @@ def typecast(function):
     return wrapper
 
 
-def typecheck(function):
+def typecheck(function: typing.Callable[..., typing.Any]) -> typing.Callable[..., typing.Any]:
 
     @functools.wraps(function)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: typing.Any, **kwargs: typing.Any):
         # Check the type hints
         check_type_hints(function, args, kwargs)
 

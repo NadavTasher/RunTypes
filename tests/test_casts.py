@@ -19,7 +19,7 @@ def test_dict_cast():
 def test_tuple_cast():
     assert Tuple[int, int]((1, "2")) == (1, 2)
     assert not isinstance((1, "2"), Tuple[int, int])
-    assert isinstance((1, 2, 3), Tuple[Integer, Integer, Integer])
+    assert isinstance((1, 2, 3), Tuple[int, int, int])
 
 
 def test_schema_cast():

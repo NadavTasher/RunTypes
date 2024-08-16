@@ -39,9 +39,9 @@ def test_text():
 
 
 def test_bytes():
-    assert Bytes(b"Hello") == b"Hello"
-    assert isinstance(b"Hello World", Bytes)
-    assert not isinstance(0, Bytes)
+    assert ByteString(b"Hello") == b"Hello"
+    assert isinstance(b"Hello World", ByteString)
+    assert not isinstance(0, ByteString)
 
 
 def test_list():
@@ -83,13 +83,13 @@ def test_float():
 
 
 def test_bool():
-    assert Bool(True) == True
-    assert isinstance(True, Bool)
-    assert isinstance(False, Bool)
-    assert not isinstance("True", Bool)
-    assert not isinstance("False", Bool)
-    assert not isinstance(0, Bool)
-    assert not isinstance(1, Bool)
+    assert Boolean(True) == True
+    assert isinstance(True, Boolean)
+    assert isinstance(False, Boolean)
+    assert not isinstance("True", Boolean)
+    assert not isinstance("False", Boolean)
+    assert not isinstance(0, Boolean)
+    assert not isinstance(1, Boolean)
 
 
 def test_schema():

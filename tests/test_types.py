@@ -24,7 +24,8 @@ def test_literal():
 
 
 def test_optional():
-    assert Optional("A") == "A"
+    with pytest.raises(ArgumentError):
+        assert Optional("A") == "A"
     assert Optional[Text]("A") == "A"
     assert isinstance(None, Optional[Text])
     assert isinstance("Hello World", Optional[Text])
@@ -46,7 +47,8 @@ def test_bytes():
 
 def test_list():
     assert List[Union[Text, Integer]](["1", 2]) == ["1", 2]
-    assert isinstance(["Hello", "World", 42], List)
+    with pytest.raises(ArgumentError):
+        assert isinstance(["Hello", "World", 42], List)
     assert not isinstance(["Hello", "World", 42], List[Text])
     assert not isinstance(["Hello", 10], List[int])
 
@@ -58,7 +60,8 @@ def test_dict():
 
 
 def test_tuple():
-    assert Tuple((1, 2)) == (1, 2)
+    with pytest.raises(ArgumentError):
+        assert Tuple((1, 2)) == (1, 2)
     assert Tuple[Integer, Integer]((1, 2)) == (1, 2)
     assert isinstance((1, 2, 3), Tuple[Integer, Integer, Integer])
     assert isinstance((1, 2, 3, "Hello World"), Tuple[Integer, Integer, Integer, Text])

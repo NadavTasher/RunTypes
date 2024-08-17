@@ -3,7 +3,6 @@ import re
 import typing
 
 from runtypes.runtype import RunType, _assert, _assert_istype, _assert_isinstance
-from runtypes.all.basic import Any, AnyStr
 
 
 def _schema_cast(value: typing.Any, schema: typing.Dict[str, typing.Any]) -> typing.Dict[str, typing.Any]:
@@ -49,16 +48,18 @@ def _schema_check(value: typing.Any, schema: typing.Dict[str, typing.Any]) -> No
             # Validate the value
             _assert_isinstance(_value, _value_type)
 
+
 def _charset_cast(value: typing.Any, chars: str) -> str:
     # Make sure value is a string
-    _assert_isinstance(value, AnyStr)
+    _assert_istype(value, str)
 
     # Return the string with only the valid characters
     return str().join(char for char in value if char in chars)
 
+
 def _charset_check(value: typing.Any, chars: str) -> None:
     # Make sure value is a string
-    _assert_isinstance(value, AnyStr)
+    _assert_istype(value, str)
 
     # Validate charset
     for char in value:
@@ -67,7 +68,7 @@ def _charset_check(value: typing.Any, chars: str) -> None:
 
 def _domain_check(value: typing.Any) -> None:
     # Make sure value is a string
-    _assert_isinstance(value, AnyStr)
+    _assert_istype(value, str)
 
     # Split to parts by dot
     parts = value.split(".")
@@ -82,7 +83,7 @@ def _domain_check(value: typing.Any) -> None:
 
 def _email_check(value: typing.Any) -> None:
     # Make sure value is a string
-    _assert_isinstance(value, AnyStr)
+    _assert_istype(value, str)
 
     # Split into two (exactly)
     parts = value.split("@")
@@ -107,9 +108,10 @@ def _email_check(value: typing.Any) -> None:
         # Make sure part matches charset
         _assert_isinstance(part.lower(), Charset["abcdefghijklmnopqrstuvwxyz0123456789+-_"])
 
+
 def _pathname_check(value: typing.Any) -> None:
     # Make sure value is a string
-    _assert_isinstance(value, AnyStr)
+    _assert_istype(value, str)
 
     # Convert the path into a normal path
     value = os.path.normpath(value)
@@ -122,9 +124,10 @@ def _pathname_check(value: typing.Any) -> None:
         # Check for forbidden characters
         _assert(char not in ':"*?<>|', "Value contains invalid characters")
 
+
 def _path_check(value: typing.Any) -> None:
     # Make sure value is a string
-    _assert_isinstance(value, AnyStr)
+    _assert_istype(value, str)
 
     # Create normal path from value
     normpath = os.path.normpath(value)

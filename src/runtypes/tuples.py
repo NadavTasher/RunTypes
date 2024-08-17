@@ -1,7 +1,8 @@
 import typing
 import collections
 
-from runtypes.runtype import RunType, _assert_istype
+from runtypes.runtype import _assert_istype
+
 
 def TypedTuple(name: str, fields: typing.List[typing.Tuple[str, type]]) -> type:
     # Make sure the name is a string

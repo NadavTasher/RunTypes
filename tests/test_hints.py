@@ -59,12 +59,13 @@ def test_kwargs():
     with pytest.raises(TypeError):
         my_function(1, "2", d="A")
 
+
 def test_cast():
 
     @typecast
     def my_function(a, b: str, c: int, d: Optional[Boolean]):
         return (a, b, c, d)
-    
+
     assert my_function(1, 2, 3, 4) == (1, "2", 3, True)
 
     with pytest.raises(TypeError):

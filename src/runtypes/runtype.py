@@ -1,4 +1,5 @@
 import typing
+import inspect
 
 
 def _assert(_condition: bool, _error: str) -> None:
@@ -17,9 +18,45 @@ def _assert_isinstance(_value: typing.Any, _type: typing.Any) -> None:
     _assert(isinstance(_value, _type), f"Value is not an instance of {_type}")
 
 
+class ArgumentError(KeyError):
+    pass
+
+
+def _resolve_function_arguments(function: typing.Callable[..., typing.Any], args: typing.Sequence[typing.Any], kwargs: typing.Dict[str, typing.Any], strict: bool = False) -> typing.Dict[str, typing.Any]:
+    # Get the function signature
+    signature = inspect.signature(function)
+
+    # Create a dictionary for arguments
+    arguments = {}
+
+    # Loop over variable names and fetch the respective variable
+    for index, (name, parameter) in enumerate(signature.parameters.items()):
+        # Check whether the argument is provided via args
+        if index < len(args):
+            arguments[name] = args[index]
+            continue
+
+        # Check whether the argument is provided via kwargs
+        if name in kwargs:
+            arguments[name] = kwargs[name]
+            continue
+
+        # Check whether the argument is provided via defaults
+        if parameter.default is not inspect._empty:
+            arguments[name] = parameter.default
+            continue
+
+        # Argument was not provided!
+        if strict:
+            raise ArgumentError(f"Argument {name!r} was not provided")
+
+    # Return the arguments
+    return arguments
+
+
 class RunType(object):
 
-    def __init__(self, name: str, caster: typing.Optional[typing.Callable[..., typing.Any]] = None, checker: typing.Optional[typing.Callable[..., None]]=None, arguments: typing.List[type] = []) -> None:
+    def __init__(self, name: str, caster: typing.Optional[typing.Callable[..., typing.Any]] = None, checker: typing.Optional[typing.Callable[..., None]] = None, arguments: typing.List[type] = []) -> None:
         # Make sure the name is a string
         _assert_istype(name, str)
 
@@ -46,13 +83,12 @@ class RunType(object):
         self._checker = checker
         self._arguments = arguments
 
-    def __subclasscheck__(self, subclass: type) -> bool:
-        # Make sure the subclass is literally type
-        return subclass == type
-    
     def cast(self, value: typing.Any) -> typing.Any:
         # If the type caster is defined, execute it
         if self._caster:
+            # Make sure all caster arguments have been resolved
+            _resolve_function_arguments(self._caster, [value] + self._arguments, {}, strict=True)
+
             # Use the caster to cast the value
             return self._caster(value, *self._arguments)
 
@@ -60,21 +96,23 @@ class RunType(object):
         self.check(value)
 
         # Return original value
-        return value        
+        return value
 
     def check(self, value: typing.Any) -> None:
         # If the type checker is defined, execute it
         if self._checker:
+            # Make sure all caster arguments have been resolved
+            _resolve_function_arguments(self._checker, [value] + self._arguments, {}, strict=True)
+
             # Execute type checker with arguments
             self._checker(value, *self._arguments)
 
             # Nothing more to do
             return
-        
+
         # Fallback - check using type caster
         _assert(value == self.cast(value), f"Casted value does not match input value")
-        
-    
+
     def __call__(self, value: typing.Any) -> typing.Any:
         # Try casting the value
         return self.cast(value)
@@ -86,6 +124,9 @@ class RunType(object):
 
             # Type-checking passed
             return True
+        except ArgumentError:
+            # Re-raise
+            raise
         except:
             # Type-checking failed
             return False

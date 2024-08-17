@@ -46,6 +46,10 @@ def _resolve_function_arguments(function: typing.Callable[..., typing.Any], args
             arguments[name] = parameter.default
             continue
 
+        # Make sure argument is not a positional
+        if parameter.kind == inspect._VAR_POSITIONAL:
+            continue
+
         # Argument was not provided!
         if strict:
             raise ArgumentError(f"Argument {name!r} was not provided")

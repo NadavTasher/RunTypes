@@ -60,8 +60,7 @@ def test_dict():
 
 
 def test_tuple():
-    with pytest.raises(ArgumentError):
-        assert Tuple((1, 2)) == (1, 2)
+    assert Tuple((1, 2)) == (1, 2)
     assert Tuple[Integer, Integer]((1, 2)) == (1, 2)
     assert isinstance((1, 2, 3), Tuple[Integer, Integer, Integer])
     assert isinstance((1, 2, 3, "Hello World"), Tuple[Integer, Integer, Integer, Text])

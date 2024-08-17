@@ -1,6 +1,6 @@
 import pytest
 
-from runtypes.types import *
+from runtypes import *
 
 
 def test_any():
@@ -24,7 +24,8 @@ def test_literal():
 
 
 def test_optional():
-    assert Optional("A") == "A"
+    with pytest.raises(ArgumentError):
+        assert Optional("A") == "A"
     assert Optional[Text]("A") == "A"
     assert isinstance(None, Optional[Text])
     assert isinstance("Hello World", Optional[Text])
@@ -39,14 +40,15 @@ def test_text():
 
 
 def test_bytes():
-    assert Bytes(b"Hello") == b"Hello"
-    assert isinstance(b"Hello World", Bytes)
-    assert not isinstance(0, Bytes)
+    assert ByteString(b"Hello") == b"Hello"
+    assert isinstance(b"Hello World", ByteString)
+    assert not isinstance(0, ByteString)
 
 
 def test_list():
     assert List[Union[Text, Integer]](["1", 2]) == ["1", 2]
-    assert isinstance(["Hello", "World", 42], List)
+    with pytest.raises(ArgumentError):
+        assert isinstance(["Hello", "World", 42], List)
     assert not isinstance(["Hello", "World", 42], List[Text])
     assert not isinstance(["Hello", 10], List[int])
 
@@ -58,7 +60,8 @@ def test_dict():
 
 
 def test_tuple():
-    assert Tuple((1, 2)) == (1, 2)
+    with pytest.raises(ArgumentError):
+        assert Tuple((1, 2)) == (1, 2)
     assert Tuple[Integer, Integer]((1, 2)) == (1, 2)
     assert isinstance((1, 2, 3), Tuple[Integer, Integer, Integer])
     assert isinstance((1, 2, 3, "Hello World"), Tuple[Integer, Integer, Integer, Text])
@@ -83,13 +86,13 @@ def test_float():
 
 
 def test_bool():
-    assert Bool(True) == True
-    assert isinstance(True, Bool)
-    assert isinstance(False, Bool)
-    assert not isinstance("True", Bool)
-    assert not isinstance("False", Bool)
-    assert not isinstance(0, Bool)
-    assert not isinstance(1, Bool)
+    assert Boolean(True) == True
+    assert isinstance(True, Boolean)
+    assert isinstance(False, Boolean)
+    assert not isinstance("True", Boolean)
+    assert not isinstance("False", Boolean)
+    assert not isinstance(0, Boolean)
+    assert not isinstance(1, Boolean)
 
 
 def test_schema():

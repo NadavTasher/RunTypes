@@ -1,12 +1,11 @@
 import pytest
 
-from runtypes.types import *
-from runtypes.typedtuple import typedtuple
+from runtypes import *
 
 
 def test_creation():
     # Create common type to be used
-    MyType = typedtuple("MyType", [("a", Integer), ("b", Text), ("c", Bool)])
+    MyType = typedtuple("MyType", [("a", int), ("b", str), ("c", bool)])
 
     # This should work
     m_inst = MyType(1, "Hello World", False)

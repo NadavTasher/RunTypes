@@ -81,7 +81,7 @@ def _domain_check(value: typing.Any) -> None:
         _assert_isinstance(part.lower(), Charset["abcdefghijklmnopqrstuvwxyz0123456789-"])
 
 
-def _email_check(value: typing.Any) -> None:
+def _email_check(value: typing.Any, *domains: str) -> None:
     # Make sure value is a string
     _assert_istype(value, str)
 
@@ -99,6 +99,10 @@ def _email_check(value: typing.Any) -> None:
 
     # Make sure the domain is an FQDN
     _domain_check(domain)
+
+    # Make sure the domain is in the allowed list
+    if domains:
+        _assert(domain in domains, "Value domain is not valid")
 
     # Make sure the address is valid
     for part in address.split("."):

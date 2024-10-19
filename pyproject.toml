@@ -1,6 +1,6 @@
 [project]
 name = "runtypes"
-version = "0.6.2"
+version = "0.6.3"
 requires-python = ">= 3.8"
 description = "A simple library for runtime validation of types."
 readme = "README.md"

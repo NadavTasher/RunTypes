@@ -21,13 +21,27 @@ def cast_type_hints(function: typing.Callable[..., typing.Any], args: typing.Seq
     types = _resolve_function_types(function)
     arguments = _resolve_function_arguments(function, args, kwargs)
 
+    # Create an output dictionary
+    output = {}
+
+    # Loop over all of the argument types
+    for argument_name, argument_type in types.items():
+        # Fetch the argument value
+        argument_value = arguments.get(argument_name)
+
+        # Is this argument type a type? If so, is the argument the same type?
+        if isinstance(argument_type, type) and isinstance(argument_value, argument_type):
+            # Set the argument
+            output[argument_name] = argument_value
+
+            # Continue!
+            continue
+
+        # Try casting the argument
+        output[argument_name] = argument_type(argument_value)
+
     # Create a casted dictionary with all items
-    return {
-        # Cast the argument using the argument type
-        argument_name: argument_type(arguments.get(argument_name))
-        # For all provided types
-        for argument_name, argument_type in types.items()
-    }
+    return output
 
 
 def check_type_hints(function: typing.Callable[..., typing.Any], args: typing.Sequence[typing.Any], kwargs: typing.Dict[str, typing.Any]) -> None:

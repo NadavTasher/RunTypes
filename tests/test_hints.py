@@ -62,11 +62,19 @@ def test_kwargs():
 
 def test_cast():
 
-    @typecast
-    def my_function(a, b: str, c: int, d: Optional[Boolean]):
-        return (a, b, c, d)
+    class MyClass:
+        pass
 
-    assert my_function(1, 2, 3, 4) == (1, "2", 3, True)
+    @typecast
+    def my_function(a, b: str, c: int, d: Optional[Boolean], e: MyClass):
+        return (a, b, c, d, e)
+
+    x = MyClass()
+
+    assert my_function(1, 2, 3, 4, x) == (1, "2", 3, True, x)
 
     with pytest.raises(TypeError):
-        my_function(1, 2, object(), object())
+        my_function(1, 2, object(), object(), x)
+
+    with pytest.raises(TypeError):
+        my_function(1, 2, 3, 4, 5)
